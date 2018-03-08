@@ -2,20 +2,57 @@
 
 [@bs.module] external logo : string = "./logo.svg";
 
-let component = ReasonReact.statelessComponent("App");
+module Square = {
+  let component = ReasonReact.statelessComponent("Square");
+  let make = _children => {
+    ...component,
+    render: _self => <button className="square" />
+  };
+};
 
-let make = (~message, _children) => {
-  ...component,
-  render: (_self) =>
-    <div className="App">
-      <div className="App-header">
-        <img src=logo className="App-logo" alt="logo" />
-        <h2> (ReasonReact.stringToElement(message)) </h2>
+module Board = {
+  let component = ReasonReact.statelessComponent("Board");
+  let status = "Next player: X";
+  let renderSquare = (_) => <Square />;
+  let str = ReasonReact.stringToElement;
+  let make = _children => {
+    ...component,
+    render: _self =>
+      <div>
+        <div className="status"> (str(status)) </div>
+        <div className="board-row">
+          (renderSquare())
+          (renderSquare())
+          (renderSquare())
+        </div>
+        <div className="board-row">
+          (renderSquare())
+          (renderSquare())
+          (renderSquare())
+        </div>
+        <div className="board-row">
+          (renderSquare())
+          (renderSquare())
+          (renderSquare())
+        </div>
       </div>
-      <p className="App-intro">
-        (ReasonReact.stringToElement("To get started, edit"))
-        <code> (ReasonReact.stringToElement(" src/app.re ")) </code>
-        (ReasonReact.stringToElement("and save to reload."))
-      </p>
-    </div>
+  };
+};
+
+module Game = {
+  let component = ReasonReact.statelessComponent("Game");
+  let make = _children => {
+    ...component,
+    render: (_) =>
+      <div className="game">
+        <div className="game-board"> <Board /> </div>
+        <div className="game-info"> <div /> <ol /> </div>
+      </div>
+  };
+};
+
+let component = ReasonReact.statelessComponent("App");
+let make = _children => {
+  ...component,
+  render: _self => <div className="App"> <Game /> </div>
 };
