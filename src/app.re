@@ -5,47 +5,64 @@
 let str = ReasonReact.stringToElement;
 
 module Square = {
-  type action =
-    | ClickSquare;
-  let component = ReasonReact.reducerComponent("Square");
-  let make = (~value, _children) => {
+  let component = ReasonReact.statelessComponent("Square");
+  let make = (~value, ~onToggle, _children) => {
     ...component,
-    initialState: () => value,
-    reducer: (action, _state) =>
-      switch action {
-      | ClickSquare => ReasonReact.Update("X")
-      },
-    render: self =>
-      <button className="square" onClick=(self.reduce(_evt => ClickSquare))>
-        (str(self.state))
+    render: _self =>
+      /* <div /> */
+      <button className="square" onClick=(_evt => onToggle())>
+        (str(value))
       </button>
   };
 };
 
 module Board = {
-  let component = ReasonReact.statelessComponent("Board");
+  type action =
+    | ClickSquare;
+  let component = ReasonReact.reducerComponent("Board");
   let status = "Next player: X";
   /* let renderSquare = value => <Square value=(value)/>; */
   let make = _children => {
     ...component,
-    render: _self =>
+    initialState: () => ["Z", "Z", "Z", "Z", "Z", "Z", "Z", "Z", "Z"],
+    reducer: (action, _state) =>
+      switch action {
+      | ClickSquare => ReasonReact.Update(["Z", "Z", "Z", "Z", "Z", "Z", "Z", "Z", "Z"])
+      },
+    render: self =>
       <div>
         <div className="status"> (str(status)) </div>
-        <div className="board-row">
-          <Square value=(string_of_int(1)) />
-          <Square value=(string_of_int(2)) />
-          <Square value=(string_of_int(3)) />
-        </div>
-        <div className="board-row">
-          <Square value=(string_of_int(4)) />
-          <Square value=(string_of_int(5)) />
-          <Square value=(string_of_int(6)) />
-        </div>
-        <div className="board-row">
-          <Square value=(string_of_int(7)) />
-          <Square value=(string_of_int(8)) />
-          <Square value=(string_of_int(9)) />
-        </div>
+        (
+          ReasonReact.arrayToElement(
+            Array.of_list(
+              List.map((num) =>
+                <Square
+                  value=(num)
+                  onToggle=(self.reduce(() => ClickSquare))
+                />, self.state
+              )
+            )
+          )
+        )
+        <div
+          className="board-row"
+          /* <Square value=(string_of_int(1)) onToggle=(self.reduce (()=> ClickSquare)) /> */
+          /* (renderSquare(string_of_int(1))) */
+          /* <Square value=(string_of_int(2)) />
+             <Square value=(string_of_int(3)) /> */
+        />
+        <div
+          className="board-row"
+          /* <Square value=(string_of_int(4)) />
+             <Square value=(string_of_int(5)) />
+             <Square value=(string_of_int(6)) /> */
+        />
+        <div
+          className="board-row"
+          /* <Square value=(string_of_int(7)) />
+             <Square value=(string_of_int(8)) />
+             <Square value=(string_of_int(9)) /> */
+        />
       </div>
   };
 };
