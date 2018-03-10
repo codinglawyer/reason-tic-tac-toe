@@ -7,12 +7,6 @@ ol, ul {
   padding-left: 30px;
 }
 
-.board-row:after {
-  clear: both;
-  content: "";
-  display: table;
-}
-
 .status {
   margin-bottom: 10px;
 }
@@ -20,7 +14,7 @@ ol, ul {
 .square {
   background: #fff;
   border: 1px solid #999;
-  float: left;
+  display: inline-block;
   font-size: 24px;
   font-weight: bold;
   line-height: 34px;

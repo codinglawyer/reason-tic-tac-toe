@@ -15,9 +15,9 @@ module Square = {
   let make = (~value, ~onToggle, _children) => {
     ...component,
     render: _self =>
-      <button className="square" onClick=(_evt => onToggle())>
+      <div className="square" onClick=(_evt => onToggle())>
         (str(valueOr(value, "-")))
-      </button>
+      </div>
   };
 };
 
@@ -27,16 +27,14 @@ type state = {
 };
 
 module Board = {
-  /* type turn = option(string); */
   type action =
     | ClickSquare(string);
   let component = ReasonReact.reducerComponent("Board");
-  let status = "Next player: X";
-  /* let renderSquare = value => <Square value=(value)/>; */
+  let setStatus = isXplaying => "Next player:" ++ (isXplaying ? "X" : "O");
   let make = _children => {
     ...component,
     initialState: () => {
-      fields: [None, None, None, None, None, None, None, None, None],
+      fields: [None, None, None, Some("break"), None, None, None, Some("break"), None, None, None],
       isXPlaying: true
     },
     reducer: (action, state: state) =>
@@ -49,50 +47,34 @@ module Board = {
               Js.log(index);
               Js.log(str(i));
               string_of_int(index) === i ?
-                state.isXPlaying ? Some("X") : Some("Y") : value;
+                state.isXPlaying ? Some("X") : Some("O") : value;
             },
             state.fields
           );
         Js.log(res);
         ReasonReact.Update({isXPlaying: ! state.isXPlaying, fields: res});
       },
-    render: self =>
+    render: ({state, reduce}) =>
       <div>
-        <div className="status"> (str(status)) </div>
+        <div className="status"> (str(setStatus(state.isXPlaying))) </div>
         (
           ReasonReact.arrayToElement(
             Array.of_list(
               List.mapi(
                 (i, num) =>
+                switch num{
+                | Some("break") => <div />
+                | _ =>
                   <Square
                     key=(string_of_int(i))
                     value=num
-                    onToggle=(self.reduce(() => ClickSquare(string_of_int(i))))
-                  />,
-                self.state.fields
+                    onToggle=(reduce(() => ClickSquare(string_of_int(i))))
+                  />},
+                state.fields
               )
             )
           )
         )
-        <div
-          className="board-row"
-          /* <Square value=(string_of_int(1)) onToggle=(self.reduce (()=> ClickSquare)) /> */
-          /* (renderSquare(string_of_int(1))) */
-          /* <Square value=(string_of_int(2)) />
-             <Square value=(string_of_int(3)) /> */
-        />
-        <div
-          className="board-row"
-          /* <Square value=(string_of_int(4)) />
-             <Square value=(string_of_int(5)) />
-             <Square value=(string_of_int(6)) /> */
-        />
-        <div
-          className="board-row"
-          /* <Square value=(string_of_int(7)) />
-             <Square value=(string_of_int(8)) />
-             <Square value=(string_of_int(9)) /> */
-        />
       </div>
   };
 };
