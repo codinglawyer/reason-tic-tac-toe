@@ -26,6 +26,59 @@ type state = {
   isXPlaying: bool
 };
 
+
+
+let toBool = ex =>
+  switch ex {
+  | None => false
+  | _ => true
+  };
+
+
+  let checkWinner = fields => {
+    let winningRows = [
+  [0, 1, 2],
+  [4, 5, 6],
+  [8, 9, 10],
+  [0, 4, 8],
+  [1, 5, 9],
+  [2, 6, 10],
+  [0, 5, 10],
+  [2, 5, 8]
+];
+    let rec exp = remainder =>
+        {
+          let head = List.hd(remainder);
+          let tail = List.tl(remainder);
+          let isWinner =
+            toBool(List.nth(fields, List.nth(head, 0)))
+            &&
+            toBool(List.nth(fields, List.nth(head, 0))) === toBool(
+                                                             List.nth(
+                                                               fields,
+                                                               List.nth(head, 1)
+                                                             )
+                                                           )
+            &&
+            toBool(List.nth(fields, List.nth(head, 0))) === toBool(
+                                                             List.nth(
+                                                               fields,
+                                                               List.nth(head, 2)
+                                                             )
+                                                           ) ?
+              true : false;
+          Js.log(isWinner);
+          switch (tail, isWinner) {
+          | ([], false) => "FAIL"
+          | (_, true) => "PASS"
+          | _ => exp(tail)
+          };
+        };
+    exp(winningRows);
+  };
+
+
+
 module Board = {
   type action =
     | ClickSquare(string);
@@ -40,8 +93,7 @@ module Board = {
     reducer: (action, state: state) =>
       switch action {
       | ClickSquare(i) =>
-        Js.log(i);
-        let res =
+        let updatedFields =
           List.mapi(
             (index, value) => {
               Js.log(index);
@@ -51,8 +103,12 @@ module Board = {
             },
             state.fields
           );
-        Js.log(res);
-        ReasonReact.Update({isXPlaying: ! state.isXPlaying, fields: res});
+
+          Js.log(checkWinner(updatedFields));
+
+
+        Js.log(updatedFields);
+        ReasonReact.Update({isXPlaying: ! state.isXPlaying, fields: updatedFields});
       },
     render: ({state, reduce}) =>
       <div>
@@ -63,7 +119,7 @@ module Board = {
               List.mapi(
                 (i, num) =>
                 switch num{
-                | Some("break") => <div />
+                | Some("break") => <div key=(string_of_int(i))/>
                 | _ =>
                   <Square
                     key=(string_of_int(i))
