@@ -10,30 +10,29 @@ let valueOr = (foo: option('a), default: 'a) =>
   | _ => default
   };
 
+  let toBool = value =>
+  switch value {
+  | "X" => true
+  | "O" => true
+  | _ => false
+  };
+
 module Square = {
   let component = ReasonReact.statelessComponent("Square");
-  let make = (~value, ~onToggle, _children) => {
+  let make = (~value, ~onToggle, ~isWinner, _children) => {
     ...component,
     render: _self =>
-      <div className="square" onClick=(_evt => onToggle())>
+      <button className="square" disabled={Js.Boolean.to_js_boolean(toBool(isWinner))} onClick=(_evt => onToggle())>
         (str(valueOr(value, "-")))
-      </div>
+      </button>
   };
 };
 
 type state = {
   fields: list(option(string)),
-  isXPlaying: bool
+  isXPlaying: bool,
+  winner: string
 };
-
-
-
-let toBool = ex =>
-  switch ex {
-  | None => false
-  | _ => true
-  };
-
 
   let checkWinner = fields => {
     let winningRows = [
@@ -50,27 +49,10 @@ let toBool = ex =>
         {
           let head = List.hd(remainder);
           let tail = List.tl(remainder);
-          let isWinner =
-            toBool(List.nth(fields, List.nth(head, 0)))
-            &&
-            toBool(List.nth(fields, List.nth(head, 0))) === toBool(
-                                                             List.nth(
-                                                               fields,
-                                                               List.nth(head, 1)
-                                                             )
-                                                           )
-            &&
-            toBool(List.nth(fields, List.nth(head, 0))) === toBool(
-                                                             List.nth(
-                                                               fields,
-                                                               List.nth(head, 2)
-                                                             )
-                                                           ) ?
-              true : false;
-          Js.log(isWinner);
-          switch (tail, isWinner) {
-          | ([], false) => "FAIL"
-          | (_, true) => "PASS"
+          switch (tail, List.nth(fields, List.nth(head, 0)), List.nth(fields, List.nth(head, 1)), List.nth(fields, List.nth(head, 2))){
+          | (_, Some("X"), Some("X"), Some("X")) => "X"
+          | (_, Some("O"), Some("O"), Some("O")) => "O"
+          | ([], _, _, _) => "NON"
           | _ => exp(tail)
           };
         };
@@ -83,12 +65,14 @@ module Board = {
   type action =
     | ClickSquare(string);
   let component = ReasonReact.reducerComponent("Board");
-  let setStatus = isXplaying => "Next player:" ++ (isXplaying ? "X" : "O");
+  let setStatus = (isXplaying, winner) => ((winner === "X") || (winner === "O")) ? ("The Winner is:" ++ winner) :
+  "Next player:" ++ (isXplaying ? "X" : "O");
   let make = _children => {
     ...component,
     initialState: () => {
       fields: [None, None, None, Some("break"), None, None, None, Some("break"), None, None, None],
-      isXPlaying: true
+      isXPlaying: true,
+      winner: "NON"
     },
     reducer: (action, state: state) =>
       switch action {
@@ -104,15 +88,15 @@ module Board = {
             state.fields
           );
 
-          Js.log(checkWinner(updatedFields));
+          let winner = checkWinner(updatedFields);
 
 
-        Js.log(updatedFields);
-        ReasonReact.Update({isXPlaying: ! state.isXPlaying, fields: updatedFields});
+        /* Js.log(updatedFields); */
+        ReasonReact.Update({isXPlaying: ! state.isXPlaying, fields: updatedFields, winner: winner});
       },
     render: ({state, reduce}) =>
       <div>
-        <div className="status"> (str(setStatus(state.isXPlaying))) </div>
+        <div className="status"> (str(setStatus(state.isXPlaying, state.winner))) </div>
         (
           ReasonReact.arrayToElement(
             Array.of_list(
@@ -125,6 +109,7 @@ module Board = {
                     key=(string_of_int(i))
                     value=num
                     onToggle=(reduce(() => ClickSquare(string_of_int(i))))
+                    isWinner=state.winner
                   />},
                 state.fields
               )
