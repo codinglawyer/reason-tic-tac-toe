@@ -2,15 +2,15 @@
 
 [@bs.module] external logo : string = "./logo.svg";
 
-let str = ReasonReact.stringToElement;
+let toString = ReasonReact.stringToElement;
 
-let valueOr = (foo: option('a), default: 'a) =>
-  switch foo {
+let optionToValue = (opt: option('a), default: 'a) =>
+  switch opt {
   | Some(value) => value
   | _ => default
   };
 
-let toBool = value =>
+let stringToBool = (value: string) =>
   switch value {
   | "X" => true
   | "O" => true
@@ -24,17 +24,11 @@ module Square = {
     render: _self =>
       <button
         className="square"
-        disabled=(Js.Boolean.to_js_boolean(toBool(isWinner)))
+        disabled=(Js.Boolean.to_js_boolean(stringToBool(isWinner)))
         onClick=(_evt => onToggle())>
-        (str(valueOr(value, "-")))
+        (toString(optionToValue(value, "-")))
       </button>
   };
-};
-
-type state = {
-  fields: list(option(string)),
-  isXPlaying: bool,
-  winner: string
 };
 
 let checkWinner = fields => {
@@ -48,7 +42,7 @@ let checkWinner = fields => {
     [0, 5, 10],
     [2, 5, 8]
   ];
-  let rec exp = remainder => {
+  let rec check = remainder => {
     let head = List.hd(remainder);
     let tail = List.tl(remainder);
     switch (
@@ -59,18 +53,23 @@ let checkWinner = fields => {
     ) {
     | (_, Some("X"), Some("X"), Some("X")) => "X"
     | (_, Some("O"), Some("O"), Some("O")) => "O"
-    | ([], _, _, _) => "NON"
-    | _ => exp(tail)
+    | ([], _, _, _) => ""
+    | _ => check(tail)
     };
   };
-  exp(winningRows);
+  check(winningRows);
 };
 
 module Board = {
+  type state = {
+    fields: list(option(string)),
+    isXPlaying: bool,
+    winner: string
+  };
   type action =
-    | ClickSquare(string);
+    | SquareClick(string);
   let component = ReasonReact.reducerComponent("Board");
-  let setStatus = (isXplaying, winner) =>
+  let setStatus = (isXplaying: bool, winner: string) =>
     winner === "X" || winner === "O" ?
       "The Winner is:" ++ winner : "Next player:" ++ (isXplaying ? "X" : "O");
   let make = _children => {
@@ -90,53 +89,45 @@ module Board = {
         None
       ],
       isXPlaying: true,
-      winner: "NON"
+      winner: ""
     },
-    reducer: (action, state: state) =>
+    reducer: (action, state) =>
       switch action {
-      | ClickSquare(i) =>
+      | SquareClick((i: string)) =>
         let updatedFields =
+          state.fields |>
           List.mapi(
-            (index, value) => {
-              Js.log(index);
-              Js.log(str(i));
+            (index, value) =>
               string_of_int(index) === i ?
-                state.isXPlaying ? Some("X") : Some("O") : value;
-            },
-            state.fields
+                state.isXPlaying ? Some("X") : Some("O") : value,
           );
-        let winner = checkWinner(updatedFields);
-        /* Js.log(updatedFields); */
         ReasonReact.Update({
           isXPlaying: ! state.isXPlaying,
           fields: updatedFields,
-          winner
+          winner: checkWinner(updatedFields)
         });
       },
-    render: ({state, reduce}) =>
+    render: ({state,reduce}) =>
       <div>
         <div className="status">
-          (str(setStatus(state.isXPlaying, state.winner)))
-        </div>
+          (setStatus(state.isXPlaying, state.winner) |> toString)
+           </div>
         (
-          ReasonReact.arrayToElement(
-            Array.of_list(
-              List.mapi(
-                (i, num) =>
-                  switch num {
-                  | Some("break") => <div key=(string_of_int(i)) />
-                  | _ =>
-                    <Square
-                      key=(string_of_int(i))
-                      value=num
-                      onToggle=(reduce(() => ClickSquare(string_of_int(i))))
-                      isWinner=state.winner
-                    />
-                  },
-                state.fields
-              )
-            )
-          )
+          state.fields
+          |> List.mapi((i, num) =>
+               switch num {
+               | Some("break") => <div key=(string_of_int(i)) />
+               | _ =>
+                 <Square
+                   key=(string_of_int(i))
+                   value=num
+                   onToggle=(reduce(() => SquareClick(string_of_int(i))))
+                   isWinner=state.winner
+                 />
+               }
+             )
+          |> Array.of_list
+          |> ReasonReact.arrayToElement
         )
       </div>
   };
