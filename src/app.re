@@ -127,15 +127,16 @@ module Board = {
           List.mapi(
             (index, value: fieldType) =>
               string_of_int(index) === i ?
-                switch state.gameState{
-                | Playing(playerType) => Filled(playerType)
-                | _ => Empty
+                switch (state.gameState, value){
+                | (_, Filled(_playerType)) => value
+                | (Playing(playerType), Empty ) => Filled(playerType)
+                | (_, _) => Empty
                 }
                 : value,
           );
         ReasonReact.Update({
           fields: updatedFields,
-          gameState: checkWinner(updatedFields, state.gameState)
+          gameState: (state.fields == updatedFields) ? state.gameState : checkWinner(updatedFields, state.gameState)
         });
       },
     render: ({state,reduce}) =>
