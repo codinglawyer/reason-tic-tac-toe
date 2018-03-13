@@ -19,17 +19,23 @@ type gameStateType =
   | Tie;
 
 let typeToValue = (tp: fieldType) =>
-  switch tp {
+  switch (tp) {
   | Filled(Cross) => "X"
   | Filled(Circle) => "O"
   | _ => ""
   };
 
 let typeToBool = (value: gameStateType) =>
-  switch value {
-  | Won(Cross) => true
-  | Won(Circle) => true
+  switch (value) {
+  | Won(_) => true
   | _ => false
+  };
+
+let squareBackground = (gameState, value) =>
+  switch (gameState) {
+  | Won(playerType) =>
+    value == Filled(playerType) ? "winner square" : "square"
+  | _ => "square"
   };
 
 module Square = {
@@ -38,11 +44,11 @@ module Square = {
     ...component,
     render: _self =>
       <button
-        className="square"
+        className=(squareBackground(gameState, value))
         disabled=(Js.Boolean.to_js_boolean(typeToBool(gameState)))
         onClick=(_evt => onToggle())>
         (toString(typeToValue(value)))
-      </button>
+      </button>,
   };
 };
 
@@ -55,7 +61,7 @@ let checkWinner = (fields, gameState) => {
     [1, 5, 9],
     [2, 6, 10],
     [0, 5, 10],
-    [2, 5, 8]
+    [2, 5, 8],
   ];
   let rec check = remainder => {
     let head = List.hd(remainder);
@@ -64,14 +70,15 @@ let checkWinner = (fields, gameState) => {
       tail,
       List.nth(fields, List.nth(head, 0)),
       List.nth(fields, List.nth(head, 1)),
-      List.nth(fields, List.nth(head, 2))
+      List.nth(fields, List.nth(head, 2)),
     ) {
     | (_, Filled(Cross), Filled(Cross), Filled(Cross)) => Won(Cross)
     | (_, Filled(Circle), Filled(Circle), Filled(Circle)) => Won(Circle)
-    | ([], _, _, _) => switch gameState {
+    | ([], _, _, _) =>
+      switch (gameState) {
       | Playing(Cross) => Playing(Circle)
       | _ => Playing(Cross)
-    }
+      }
     | _ => check(tail)
     };
   };
@@ -81,21 +88,19 @@ let checkWinner = (fields, gameState) => {
 module Board = {
   type state = {
     fields: list(fieldType),
-    gameState: gameStateType
+    gameState: gameStateType,
   };
-
   type action =
     | SquareClick(string)
     | Restart;
-
-  let setStatus = (gameState: gameStateType) => switch gameState{
-  | Playing(Cross) => "Cross is playing"
-  | Playing(Circle) => "Circle is playing"
-  | Won(Cross) => "The winner is Cross"
-  | Won(Circle) => "The winner is Circle"
-  | Tie => "Tie"
-  };
-
+  let setStatus = (gameState: gameStateType) =>
+    switch (gameState) {
+    | Playing(Cross) => "Cross is playing"
+    | Playing(Circle) => "Circle is playing"
+    | Won(Cross) => "The winner is Cross"
+    | Won(Circle) => "The winner is Circle"
+    | Tie => "Tie"
+    };
   let initialState = {
     fields: [
       Empty,
@@ -108,46 +113,45 @@ module Board = {
       Break,
       Empty,
       Empty,
-      Empty
+      Empty,
     ],
-    gameState: Playing(Cross)
+    gameState: Playing(Cross),
   };
-
   let component = ReasonReact.reducerComponent("Board");
-
   let make = _children => {
     ...component,
     initialState: () => initialState,
     reducer: (action, state) =>
-      switch action {
+      switch (action) {
       | Restart => ReasonReact.Update(initialState)
       | SquareClick((i: string)) =>
         let updatedFields =
-          state.fields |>
-          List.mapi(
-            (index, value: fieldType) =>
-              string_of_int(index) === i ?
-                switch (state.gameState, value){
-                | (_, Filled(_playerType)) => value
-                | (Playing(playerType), Empty ) => Filled(playerType)
-                | (_, _) => Empty
-                }
-                : value,
-          );
+          state.fields
+          |> List.mapi((index, value: fieldType) =>
+               string_of_int(index) === i ?
+                 switch (state.gameState, value) {
+                 | (_, Filled(_)) => value
+                 | (Playing(playerType), Empty) => Filled(playerType)
+                 | (_, _) => Empty
+                 } :
+                 value
+             );
         ReasonReact.Update({
           fields: updatedFields,
-          gameState: (state.fields == updatedFields) ? state.gameState : checkWinner(updatedFields, state.gameState)
+          gameState:
+            state.fields == updatedFields ?
+              state.gameState : checkWinner(updatedFields, state.gameState),
         });
       },
-    render: ({state,reduce}) =>
+    render: ({state, reduce}) =>
       <div>
         <div className="status">
           (setStatus(state.gameState) |> toString)
-           </div>
+        </div>
         (
           state.fields
           |> List.mapi((i, field) =>
-               switch field {
+               switch (field) {
                | Break => <div key=(string_of_int(i)) />
                | _ =>
                  <Square
@@ -162,12 +166,17 @@ module Board = {
           |> ReasonReact.arrayToElement
         )
         <div>
-        (switch state.gameState{
-        | Playing(_playerType) => ReasonReact.nullElement
-        | _ => <button onClick=(reduce((_evt) => Restart))>(toString("Restart"))</button>
-        })
+          (
+            switch (state.gameState) {
+            | Playing(_) => ReasonReact.nullElement
+            | _ =>
+              <button onClick=(reduce(_evt => Restart))>
+                (toString("Restart"))
+              </button>
+            }
+          )
         </div>
-      </div>
+      </div>,
   };
 };
 
@@ -179,7 +188,7 @@ module Game = {
       <div className="game">
         <div className="game-board"> <Board /> </div>
         <div className="game-info"> <div /> <ol /> </div>
-      </div>
+      </div>,
   };
 };
 
@@ -187,5 +196,5 @@ let component = ReasonReact.statelessComponent("App");
 
 let make = _children => {
   ...component,
-  render: _self => <div className="App"> <Game /> </div>
+  render: _self => <div className="App"> <Game /> </div>,
 };
