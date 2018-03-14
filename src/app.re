@@ -10,31 +10,31 @@ type playerType =
 
 type fieldType =
   | Empty
-  | Filled(playerType)
+  | Marked(playerType)
   | Break;
 
 type gameStateType =
   | Playing(playerType)
-  | Won(playerType)
-  | Tie;
+  | Winner(playerType)
+  | Draw;
 
 let typeToValue = (tp: fieldType) =>
   switch (tp) {
-  | Filled(Cross) => "X"
-  | Filled(Circle) => "O"
+  | Marked(Cross) => "X"
+  | Marked(Circle) => "O"
   | _ => ""
   };
 
 let typeToBool = (value: gameStateType) =>
   switch (value) {
-  | Won(_) => true
+  | Winner(_) => true
   | _ => false
   };
 
-let squareBackground = (gameState, value) =>
+let getBackgroundClass = (gameState, value) =>
   switch (gameState) {
-  | Won(playerType) =>
-    value == Filled(playerType) ? "winner square" : "square"
+  | Winner(playerType) =>
+    value == Marked(playerType) ? "winner square" : "square"
   | _ => "square"
   };
 
@@ -44,7 +44,7 @@ module Square = {
     ...component,
     render: _self =>
       <button
-        className=(squareBackground(gameState, value))
+        className=(getBackgroundClass(gameState, value))
         disabled=(Js.Boolean.to_js_boolean(typeToBool(gameState)))
         onClick=(_evt => onToggle())>
         (toString(typeToValue(value)))
@@ -52,38 +52,50 @@ module Square = {
   };
 };
 
-let checkWinner = (fields, gameState) => {
-  let winningRows = [
-    [0, 1, 2],
-    [4, 5, 6],
-    [8, 9, 10],
-    [0, 4, 8],
-    [1, 5, 9],
-    [2, 6, 10],
-    [0, 5, 10],
-    [2, 5, 8],
-  ];
-  let rec check = remainder => {
-    let head = List.hd(remainder);
-    let tail = List.tl(remainder);
-    switch (
-      tail,
-      List.nth(fields, List.nth(head, 0)),
-      List.nth(fields, List.nth(head, 1)),
-      List.nth(fields, List.nth(head, 2)),
-    ) {
-    | (_, Filled(Cross), Filled(Cross), Filled(Cross)) => Won(Cross)
-    | (_, Filled(Circle), Filled(Circle), Filled(Circle)) => Won(Circle)
-    | ([], _, _, _) =>
-      switch (gameState) {
-      | Playing(Cross) => Playing(Circle)
-      | _ => Playing(Cross)
-      }
-    | _ => check(tail)
+let isDraw = fields =>
+  List.for_all(
+    field =>
+      field == Marked(Circle) || field == Marked(Cross) || field == Break,
+    fields,
+  );
+
+let checkGameState = (fields, gameState) =>
+  isDraw(fields) ?
+    Draw :
+    {
+      let winningRows = [
+        [0, 1, 2],
+        [4, 5, 6],
+        [8, 9, 10],
+        [0, 4, 8],
+        [1, 5, 9],
+        [2, 6, 10],
+        [0, 5, 10],
+        [2, 5, 8],
+      ];
+      let rec check = remainder => {
+        let head = List.hd(remainder);
+        let tail = List.tl(remainder);
+        switch (
+          tail,
+          List.nth(fields, List.nth(head, 0)),
+          List.nth(fields, List.nth(head, 1)),
+          List.nth(fields, List.nth(head, 2)),
+        ) {
+        | (_, Marked(Cross), Marked(Cross), Marked(Cross)) =>
+          Winner(Cross)
+        | (_, Marked(Circle), Marked(Circle), Marked(Circle)) =>
+          Winner(Circle)
+        | ([], _, _, _) =>
+          switch (gameState) {
+          | Playing(Cross) => Playing(Circle)
+          | _ => Playing(Cross)
+          }
+        | _ => check(tail)
+        };
+      };
+      check(winningRows);
     };
-  };
-  check(winningRows);
-};
 
 module Board = {
   type state = {
@@ -97,9 +109,9 @@ module Board = {
     switch (gameState) {
     | Playing(Cross) => "Cross is playing"
     | Playing(Circle) => "Circle is playing"
-    | Won(Cross) => "The winner is Cross"
-    | Won(Circle) => "The winner is Circle"
-    | Tie => "Tie"
+    | Winner(Cross) => "The winner is Cross"
+    | Winner(Circle) => "The winner is Circle"
+    | Draw => "Draw"
     };
   let initialState = {
     fields: [
@@ -130,8 +142,8 @@ module Board = {
           |> List.mapi((index, value: fieldType) =>
                string_of_int(index) === i ?
                  switch (state.gameState, value) {
-                 | (_, Filled(_)) => value
-                 | (Playing(playerType), Empty) => Filled(playerType)
+                 | (_, Marked(_)) => value
+                 | (Playing(playerType), Empty) => Marked(playerType)
                  | (_, _) => Empty
                  } :
                  value
@@ -140,7 +152,7 @@ module Board = {
           fields: updatedFields,
           gameState:
             state.fields == updatedFields ?
-              state.gameState : checkWinner(updatedFields, state.gameState),
+              state.gameState : checkGameState(updatedFields, state.gameState),
         });
       },
     render: ({state, reduce}) =>
@@ -192,9 +204,10 @@ module Game = {
   };
 };
 
-let component = ReasonReact.statelessComponent("App");
-
-let make = _children => {
-  ...component,
-  render: _self => <div className="App"> <Game /> </div>,
+module App = {
+  let component = ReasonReact.statelessComponent("App");
+  let make = _children => {
+    ...component,
+    render: _self => <div className="App"> <Game /> </div>,
+  };
 };
