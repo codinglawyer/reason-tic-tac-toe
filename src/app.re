@@ -10,8 +10,7 @@ type playerType =
 
 type fieldType =
   | Empty
-  | Marked(playerType)
-  | Break;
+  | Marked(playerType);
 
 type gameStateType =
   | Playing(playerType)
@@ -22,10 +21,10 @@ let typeToValue = (tp: fieldType) =>
   switch (tp) {
   | Marked(Cross) => "X"
   | Marked(Circle) => "O"
-  | _ => ""
+  | Empty => ""
   };
 
-let typeToBool = (value: gameStateType) =>
+let isGameFinished = (value: gameStateType) =>
   switch (value) {
   | Winner(_) => true
   | _ => false
@@ -45,7 +44,7 @@ module Square = {
     render: _self =>
       <button
         className=(getBackgroundClass(gameState, value))
-        disabled=(Js.Boolean.to_js_boolean(typeToBool(gameState)))
+        disabled=(Js.Boolean.to_js_boolean(isGameFinished(gameState)))
         onClick=(_evt => onToggle())>
         (toString(typeToValue(value)))
       </button>,
@@ -54,33 +53,33 @@ module Square = {
 
 let isDraw = fields =>
   List.for_all(
-    field =>
-      field == Marked(Circle) || field == Marked(Cross) || field == Break,
+    field => field == Marked(Circle) || field == Marked(Cross),
     fields,
   );
 
-let checkGameState = (fields, gameState) =>
-  isDraw(fields) ?
+let checkGameState = (fields, gameState) => {
+  let flat = List.flatten(fields);
+  isDraw(flat) ?
     Draw :
     {
       let winningRows = [
         [0, 1, 2],
-        [4, 5, 6],
-        [8, 9, 10],
-        [0, 4, 8],
-        [1, 5, 9],
-        [2, 6, 10],
-        [0, 5, 10],
+        [3, 4, 5],
+        [6, 7, 8],
+        [0, 3, 6],
+        [1, 4, 7],
         [2, 5, 8],
+        [0, 4, 8],
+        [2, 4, 6],
       ];
       let rec check = remainder => {
         let head = List.hd(remainder);
         let tail = List.tl(remainder);
         switch (
           tail,
-          List.nth(fields, List.nth(head, 0)),
-          List.nth(fields, List.nth(head, 1)),
-          List.nth(fields, List.nth(head, 2)),
+          List.nth(flat, List.nth(head, 0)),
+          List.nth(flat, List.nth(head, 1)),
+          List.nth(flat, List.nth(head, 2)),
         ) {
         | (_, Marked(Cross), Marked(Cross), Marked(Cross)) =>
           Winner(Cross)
@@ -96,10 +95,12 @@ let checkGameState = (fields, gameState) =>
       };
       check(winningRows);
     };
+};
 
 module Board = {
+  type row = list(fieldType);
   type state = {
-    fields: list(fieldType),
+    fields: list(row),
     gameState: gameStateType,
   };
   type action =
@@ -115,17 +116,9 @@ module Board = {
     };
   let initialState = {
     fields: [
-      Empty,
-      Empty,
-      Empty,
-      Break,
-      Empty,
-      Empty,
-      Empty,
-      Break,
-      Empty,
-      Empty,
-      Empty,
+      [Empty, Empty, Empty],
+      [Empty, Empty, Empty],
+      [Empty, Empty, Empty],
     ],
     gameState: Playing(Cross),
   };
@@ -139,14 +132,17 @@ module Board = {
       | SquareClick((i: string)) =>
         let updatedFields =
           state.fields
-          |> List.mapi((index, value: fieldType) =>
-               string_of_int(index) === i ?
-                 switch (state.gameState, value) {
-                 | (_, Marked(_)) => value
-                 | (Playing(playerType), Empty) => Marked(playerType)
-                 | (_, _) => Empty
-                 } :
-                 value
+          |> List.mapi((ind, row: row) =>
+               row
+               |> List.mapi((index, value) =>
+                    string_of_int(ind) ++ string_of_int(index) === i ?
+                      switch (state.gameState, value) {
+                      | (_, Marked(_)) => value
+                      | (Playing(playerType), Empty) => Marked(playerType)
+                      | (_, _) => Empty
+                      } :
+                      value
+                  )
              );
         ReasonReact.Update({
           fields: updatedFields,
@@ -163,16 +159,27 @@ module Board = {
         (
           state.fields
           |> List.mapi((i, field) =>
-               switch (field) {
-               | Break => <div key=(string_of_int(i)) />
-               | _ =>
-                 <Square
-                   key=(string_of_int(i))
-                   value=field
-                   onToggle=(reduce(() => SquareClick(string_of_int(i))))
-                   gameState=state.gameState
-                 />
-               }
+               <div className="board-row" key=(string_of_int(i))>
+                 (
+                   field
+                   |> List.mapi((ind, value) =>
+                        <Square
+                          key=(string_of_int(i) ++ string_of_int(ind))
+                          value
+                          onToggle=(
+                            reduce(() =>
+                              SquareClick(
+                                string_of_int(i) ++ string_of_int(ind),
+                              )
+                            )
+                          )
+                          gameState=state.gameState
+                        />
+                      )
+                   |> Array.of_list
+                   |> ReasonReact.arrayToElement
+                 )
+               </div>
              )
           |> Array.of_list
           |> ReasonReact.arrayToElement

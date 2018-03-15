@@ -7,6 +7,12 @@ ol, ul {
   padding-left: 30px;
 }
 
+.board-row:after {
+  clear: both;
+  content: "";
+  display: table;
+}
+
 .status {
   margin-bottom: 10px;
 }
@@ -14,7 +20,7 @@ ol, ul {
 .square {
   background: #fff;
   border: 1px solid #999;
-  display: inline-block;
+  float: left;
   font-size: 24px;
   font-weight: bold;
   line-height: 34px;
@@ -30,6 +36,10 @@ ol, ul {
   outline: none;
 }
 
+.winner {
+  background: lightgreen;
+}
+
 .kbd-navigation .square:focus {
   background: #ddd;
 }
@@ -41,8 +51,4 @@ ol, ul {
 
 .game-info {
   margin-left: 20px;
-}
-
-.winner {
-  background: lightgreen;
 }
