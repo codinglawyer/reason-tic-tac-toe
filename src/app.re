@@ -58,43 +58,42 @@ let isDraw = fields =>
   );
 
 let checkGameState = (fields, gameState) => {
-  let flat = List.flatten(fields);
-  isDraw(flat) ?
-    Draw :
-    {
-      let winningRows = [
-        [0, 1, 2],
-        [3, 4, 5],
-        [6, 7, 8],
-        [0, 3, 6],
-        [1, 4, 7],
-        [2, 5, 8],
-        [0, 4, 8],
-        [2, 4, 6],
-      ];
-      let rec check = remainder => {
-        let head = List.hd(remainder);
-        let tail = List.tl(remainder);
-        switch (
-          tail,
-          List.nth(flat, List.nth(head, 0)),
-          List.nth(flat, List.nth(head, 1)),
-          List.nth(flat, List.nth(head, 2)),
-        ) {
-        | (_, Marked(Cross), Marked(Cross), Marked(Cross)) =>
-          Winner(Cross)
-        | (_, Marked(Circle), Marked(Circle), Marked(Circle)) =>
-          Winner(Circle)
-        | ([], _, _, _) =>
+  let flattenFields = List.flatten(fields);
+  let winningRows = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6],
+  ];
+  let rec check = remainder => {
+    let head = List.hd(remainder);
+    let tail = List.tl(remainder);
+    switch (
+      tail,
+      List.nth(flattenFields, List.nth(head, 0)),
+      List.nth(flattenFields, List.nth(head, 1)),
+      List.nth(flattenFields, List.nth(head, 2)),
+    ) {
+    | (_, Marked(Cross), Marked(Cross), Marked(Cross)) => Winner(Cross)
+    | (_, Marked(Circle), Marked(Circle), Marked(Circle)) =>
+      Winner(Circle)
+    | ([], _, _, _) =>
+      isDraw(flattenFields) ?
+        Draw :
+        (
           switch (gameState) {
           | Playing(Cross) => Playing(Circle)
           | _ => Playing(Cross)
           }
-        | _ => check(tail)
-        };
-      };
-      check(winningRows);
+        )
+    | _ => check(tail)
     };
+  };
+  check(winningRows);
 };
 
 module Board = {
@@ -153,9 +152,6 @@ module Board = {
       },
     render: ({state, reduce}) =>
       <div>
-        <div className="status">
-          (setStatus(state.gameState) |> toString)
-        </div>
         (
           state.fields
           |> List.mapi((i, field) =>
@@ -184,17 +180,18 @@ module Board = {
           |> Array.of_list
           |> ReasonReact.arrayToElement
         )
-        <div>
-          (
-            switch (state.gameState) {
-            | Playing(_) => ReasonReact.nullElement
-            | _ =>
-              <button onClick=(reduce(_evt => Restart))>
-                (toString("Restart"))
-              </button>
-            }
-          )
+        <div className="status">
+          (setStatus(state.gameState) |> toString)
         </div>
+        (
+          switch (state.gameState) {
+          | Playing(_) => ReasonReact.nullElement
+          | _ =>
+            <button className="restart" onClick=(reduce(_evt => Restart))>
+              (toString("Restart"))
+            </button>
+          }
+        )
       </div>,
   };
 };
@@ -206,7 +203,6 @@ module Game = {
     render: (_) =>
       <div className="game">
         <div className="game-board"> <Board /> </div>
-        <div className="game-info"> <div /> <ol /> </div>
       </div>,
   };
 };
