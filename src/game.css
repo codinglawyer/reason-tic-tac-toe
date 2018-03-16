@@ -34,12 +34,12 @@ body {
   outline: none;
 }
 
-.winner {
-  background: lightgreen;
-}
-
 .square:focus {
   background: #ddd;
+}
+
+.winner {
+  background: lightgreen;
 }
 
 .game {
@@ -50,10 +50,6 @@ body {
 
 .game-board {
   margin: 0 auto;
-}
-
-.game-info {
-  margin-left: 20px;
 }
 
 .restart {
