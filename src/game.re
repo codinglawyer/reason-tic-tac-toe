@@ -54,16 +54,70 @@ module Square = {
   };
 };
 
-module Board = {
-  type row = list(field);
-  type fields = list(row);
-  type state = {
-    fields,
-    gameState,
+type row = list(field);
+
+type fields = list(row);
+
+type state = {
+  fields,
+  gameState,
+};
+
+type action =
+  | SquareClick(string)
+  | Restart;
+
+let setStatus = (gameState: gameState) =>
+  switch (gameState) {
+  | Playing(Cross) => "Cross is playing"
+  | Playing(Circle) => "Circle is playing"
+  | Winner(Cross) => "The winner is Cross"
+  | Winner(Circle) => "The winner is Circle"
+  | Draw => "Draw"
   };
-  type action =
-    | SquareClick(string)
-    | Restart;
+
+module Board = {
+  let component = ReasonReact.statelessComponent("Game");
+  let make = (~state, ~onToggle, ~onClick, _children) => {
+    ...component,
+    render: (_) =>
+      <div className="game-board">
+        (
+          state.fields
+          |> List.mapi((i: int, field: row) =>
+               <div className="board-row" key=(string_of_int(i))>
+                 (
+                   field
+                   |> List.mapi((ind: int, value: field) => {
+                        let id = string_of_int(i) ++ string_of_int(ind);
+                        <Square
+                          key=id
+                          value
+                          onToggle=(() => onToggle(id))
+                          gameState=state.gameState
+                        />;
+                      })
+                   |> Array.of_list
+                   |> ReasonReact.arrayToElement
+                 )
+               </div>
+             )
+          |> Array.of_list
+          |> ReasonReact.arrayToElement
+        )
+        <div className="status"> (state.gameState |> setStatus |> str) </div>
+        (
+          switch (state.gameState) {
+          | Playing(_) => ReasonReact.nullElement
+          | _ =>
+            <button className="restart" onClick> (str("Restart")) </button>
+          }
+        )
+      </div>,
+  };
+};
+
+module Game = {
   let checkGameState = (fields: fields, gameState: gameState) => {
     let flattenFields = List.flatten(fields);
     let winningCombs = [
@@ -102,14 +156,6 @@ module Board = {
     };
     check(winningCombs);
   };
-  let setStatus = (gameState: gameState) =>
-    switch (gameState) {
-    | Playing(Cross) => "Cross is playing"
-    | Playing(Circle) => "Circle is playing"
-    | Winner(Cross) => "The winner is Cross"
-    | Winner(Circle) => "The winner is Circle"
-    | Draw => "Draw"
-    };
   let initialState = {
     fields: [
       [Empty, Empty, Empty],
@@ -148,51 +194,12 @@ module Board = {
         });
       },
     render: ({state, reduce}) =>
-      <div>
-        (
-          state.fields
-          |> List.mapi((i: int, field: row) =>
-               <div className="board-row" key=(string_of_int(i))>
-                 (
-                   field
-                   |> List.mapi((ind: int, value: field) => {
-                        let id = string_of_int(i) ++ string_of_int(ind);
-                        <Square
-                          key=id
-                          value
-                          onToggle=(reduce(() => SquareClick(id)))
-                          gameState=state.gameState
-                        />;
-                      })
-                   |> Array.of_list
-                   |> ReasonReact.arrayToElement
-                 )
-               </div>
-             )
-          |> Array.of_list
-          |> ReasonReact.arrayToElement
-        )
-        <div className="status"> (state.gameState |> setStatus |> str) </div>
-        (
-          switch (state.gameState) {
-          | Playing(_) => ReasonReact.nullElement
-          | _ =>
-            <button className="restart" onClick=(reduce(_evt => Restart))>
-              (str("Restart"))
-            </button>
-          }
-        )
-      </div>,
-  };
-};
-
-module Game = {
-  let component = ReasonReact.statelessComponent("Game");
-  let make = _children => {
-    ...component,
-    render: (_) =>
       <div className="game">
-        <div className="game-board"> <Board /> </div>
+        <Board
+          state
+          onClick=(reduce(_evt => Restart))
+          onToggle=(reduce(id => SquareClick(id)))
+        />
       </div>,
   };
 };
