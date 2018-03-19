@@ -17,7 +17,7 @@ let make = (~state: state, ~onMark, ~onRestart, _children) => {
   render: (_) =>
     <div className="game-board">
       (
-        state.fields
+        state.board
         |> List.mapi((i: int, field: row) =>
              <div className="board-row" key=(string_of_int(i))>
                (

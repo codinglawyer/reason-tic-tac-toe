@@ -13,9 +13,9 @@ type gameState =
 
 type row = list(field);
 
-type fields = list(row);
+type board = list(row);
 
 type state = {
-  fields,
+  board,
   gameState,
 };

@@ -6,14 +6,14 @@ type action =
   | ClickSquare(string)
   | Restart;
 
-let isDraw = fields =>
+let isDraw = board =>
   List.for_all(
     field => field == Marked(Circle) || field == Marked(Cross),
-    fields,
+    board,
   );
 
-let checkGameState = (fields: fields, gameState: gameState) => {
-  let flattenFields = List.flatten(fields);
+let checkGameState = (board: board, gameState: gameState) => {
+  let flattenFields = List.flatten(board);
   let winningCombs = [
     [0, 1, 2],
     [3, 4, 5],
@@ -52,7 +52,7 @@ let checkGameState = (fields: fields, gameState: gameState) => {
 };
 
 let initialState = {
-  fields: [
+  board: [
     [Empty, Empty, Empty],
     [Empty, Empty, Empty],
     [Empty, Empty, Empty],
@@ -70,7 +70,7 @@ let make = _children => {
     | Restart => ReasonReact.Update(initialState)
     | ClickSquare((i: string)) =>
       let updatedFields =
-        state.fields
+        state.board
         |> List.mapi((ind: int, row: row) =>
              row
              |> List.mapi((index: int, value: field) =>
@@ -84,9 +84,9 @@ let make = _children => {
                 )
            );
       ReasonReact.Update({
-        fields: updatedFields,
+        board: updatedFields,
         gameState:
-          state.fields == updatedFields ?
+          state.board == updatedFields ?
             state.gameState : checkGameState(updatedFields, state.gameState),
       });
     },
