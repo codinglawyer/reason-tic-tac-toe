@@ -1,5 +1,7 @@
 open SharedTypes;
 
+open Utils;
+
 let getClass = (gameState: gameState, field: field) =>
   switch (gameState) {
   | Winner(player) => field == Marked(player) ? "winner square" : "square"
@@ -28,6 +30,6 @@ let make = (~value: field, ~gameState: gameState, ~onMark, _children) => {
       className=(getClass(gameState, value))
       disabled=(gameState |> isFinished |> Js.Boolean.to_js_boolean)
       onClick=(_evt => onMark())>
-      (value |> toValue |> ReasonReact.stringToElement)
+      (value |> toValue |> toString)
     </button>,
 };

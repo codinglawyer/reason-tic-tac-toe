@@ -1,1 +1,1 @@
-ReactDOMRe.renderToElementWithId(<Game />, "root");
+ReactDOMRe.renderToElementWithId(<App />, "root");

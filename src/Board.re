@@ -1,6 +1,5 @@
 open SharedTypes;
-
-let str = ReasonReact.stringToElement;
+open Utils;
 
 let setStatus = (gameState: gameState) =>
   switch (gameState) {
@@ -40,13 +39,13 @@ let make = (~state: state, ~onMark, ~onRestart, _children) => {
         |> Array.of_list
         |> ReasonReact.arrayToElement
       )
-      <div className="status"> (state.gameState |> setStatus |> str) </div>
+      <div className="status"> (state.gameState |> setStatus |> toString) </div>
       (
         switch (state.gameState) {
         | Playing(_) => ReasonReact.nullElement
         | _ =>
           <button className="restart" onClick=onRestart>
-            (str("Restart"))
+            (toString("Restart"))
           </button>
         }
       )
