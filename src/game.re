@@ -13,7 +13,7 @@ let isDraw = board =>
   );
 
 let checkGameState = (board: board, gameState: gameState) => {
-  let flattenFields = List.flatten(board);
+  let flattenBoard = List.flatten(board);
   let winningCombs = [
     [0, 1, 2],
     [3, 4, 5],
@@ -29,15 +29,15 @@ let checkGameState = (board: board, gameState: gameState) => {
     let tail = List.tl(rest);
     switch (
       tail,
-      List.nth(flattenFields, List.nth(head, 0)),
-      List.nth(flattenFields, List.nth(head, 1)),
-      List.nth(flattenFields, List.nth(head, 2)),
+      List.nth(flattenBoard, List.nth(head, 0)),
+      List.nth(flattenBoard, List.nth(head, 1)),
+      List.nth(flattenBoard, List.nth(head, 2)),
     ) {
     | (_, Marked(Cross), Marked(Cross), Marked(Cross)) => Winner(Cross)
     | (_, Marked(Circle), Marked(Circle), Marked(Circle)) =>
       Winner(Circle)
     | ([], _, _, _) =>
-      isDraw(flattenFields) ?
+      isDraw(flattenBoard) ?
         Draw :
         (
           switch (gameState) {
@@ -68,13 +68,13 @@ let make = _children => {
   reducer: (action: action, state: state) =>
     switch (action) {
     | Restart => ReasonReact.Update(initialState)
-    | ClickSquare((i: string)) =>
-      let updatedFields =
+    | ClickSquare((id: string)) =>
+      let updatedBoard =
         state.board
         |> List.mapi((ind: int, row: row) =>
              row
              |> List.mapi((index: int, value: field) =>
-                  string_of_int(ind) ++ string_of_int(index) === i ?
+                  string_of_int(ind) ++ string_of_int(index) === id ?
                     switch (state.gameState, value) {
                     | (_, Marked(_)) => value
                     | (Playing(player), Empty) => Marked(player)
@@ -84,10 +84,10 @@ let make = _children => {
                 )
            );
       ReasonReact.Update({
-        board: updatedFields,
+        board: updatedBoard,
         gameState:
-          state.board == updatedFields ?
-            state.gameState : checkGameState(updatedFields, state.gameState),
+          state.board == updatedBoard ?
+            state.gameState : checkGameState(updatedBoard, state.gameState),
       });
     },
   render: ({state, reduce}) =>
