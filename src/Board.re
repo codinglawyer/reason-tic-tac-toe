@@ -18,10 +18,10 @@ let make = (~state: state, ~onMark, ~onRestart, _children) => {
     <div className="game-board">
       (
         state.board
-        |> List.mapi((i: int, field: row) =>
+        |> List.mapi((i: int, row: row) =>
              <div className="board-row" key=(string_of_int(i))>
                (
-                 field
+                 row
                  |> List.mapi((ind: int, value: field) => {
                       let id = string_of_int(i) ++ string_of_int(ind);
                       <Square

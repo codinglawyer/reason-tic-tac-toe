@@ -6,25 +6,28 @@ type action =
   | ClickSquare(string)
   | Restart;
 
+type winningRows = list(list(int));
+
+let winningCombs = [
+  [0, 1, 2],
+  [3, 4, 5],
+  [6, 7, 8],
+  [0, 3, 6],
+  [1, 4, 7],
+  [2, 5, 8],
+  [0, 4, 8],
+  [2, 4, 6],
+];
+
 let isDraw = board =>
   List.for_all(
     field => field == Marked(Circle) || field == Marked(Cross),
     board,
   );
 
-let checkGameState = (board: board, gameState: gameState) => {
+let checkGameState = (board: board, gameState: gameState, winningRows: winningRows) => {
   let flattenBoard = List.flatten(board);
-  let winningCombs = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6],
-  ];
-  let rec check = rest => {
+  let rec check = (rest: winningRows) => {
     let head = List.hd(rest);
     let tail = List.tl(rest);
     switch (
@@ -48,8 +51,23 @@ let checkGameState = (board: board, gameState: gameState) => {
     | _ => check(tail)
     };
   };
-  check(winningCombs);
+  check(winningRows);
 };
+
+let updateBoard = (board: board, gameState: gameState, id) =>
+  board
+  |> List.mapi((ind: int, row: row) =>
+      row
+      |> List.mapi((index: int, value: field) =>
+            string_of_int(ind) ++ string_of_int(index) === id ?
+              switch (gameState, value) {
+              | (_, Marked(_)) => value
+              | (Playing(player), Empty) => Marked(player)
+              | (_, Empty) => Empty
+              } :
+              value
+      )
+  );
 
 let initialState = {
   board: [
@@ -69,25 +87,12 @@ let make = _children => {
     switch (action) {
     | Restart => ReasonReact.Update(initialState)
     | ClickSquare((id: string)) =>
-      let updatedBoard =
-        state.board
-        |> List.mapi((ind: int, row: row) =>
-             row
-             |> List.mapi((index: int, value: field) =>
-                  string_of_int(ind) ++ string_of_int(index) === id ?
-                    switch (state.gameState, value) {
-                    | (_, Marked(_)) => value
-                    | (Playing(player), Empty) => Marked(player)
-                    | (_, Empty) => Empty
-                    } :
-                    value
-                )
-           );
+      let updatedBoard = updateBoard(state.board, state.gameState, id);
       ReasonReact.Update({
         board: updatedBoard,
         gameState:
           state.board == updatedBoard ?
-            state.gameState : checkGameState(updatedBoard, state.gameState),
+            state.gameState : checkGameState(updatedBoard, state.gameState, winningCombs),
       });
     },
   render: ({state, reduce}) =>
