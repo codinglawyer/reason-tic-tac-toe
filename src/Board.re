@@ -1,4 +1,5 @@
 open SharedTypes;
+
 open Utils;
 
 let setStatus = (gameState: gameState) =>
@@ -18,28 +19,21 @@ let make = (~state: state, ~onMark, ~onRestart, _children) => {
     <div className="game-board">
       (
         state.board
-        |> List.mapi((i: int, row: row) =>
-             <div className="board-row" key=(string_of_int(i))>
-               (
-                 row
-                 |> List.mapi((ind: int, value: field) => {
-                      let id = string_of_int(i) ++ string_of_int(ind);
-                      <Square
-                        key=id
-                        value
-                        onMark=(() => onMark(id))
-                        gameState=state.gameState
-                      />;
-                    })
-                 |> Array.of_list
-                 |> ReasonReact.arrayToElement
-               )
-             </div>
+        |> List.mapi((index: int, row: row) =>
+             <BoardRow
+               key=(string_of_int(index))
+               gameState=state.gameState
+               row
+               onMark
+               index
+             />
            )
         |> Array.of_list
         |> ReasonReact.arrayToElement
       )
-      <div className="status"> (state.gameState |> setStatus |> toString) </div>
+      <div className="status">
+        (state.gameState |> setStatus |> toString)
+      </div>
       (
         switch (state.gameState) {
         | Playing(_) => ReasonReact.nullElement
