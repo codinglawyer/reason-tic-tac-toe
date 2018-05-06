@@ -6,6 +6,11 @@ type action =
   | ClickSquare(string)
   | Restart;
 
+type winner =
+  | Cross
+  | Circle
+  | NoOne;
+
 type winningRows = list(list(int));
 
 let winningCombs = [
@@ -19,11 +24,28 @@ let winningCombs = [
   [2, 4, 6],
 ];
 
-let isDraw = board =>
+let gameEnded = board =>
   List.for_all(
     field => field == Marked(Circle) || field == Marked(Cross),
     board,
   );
+
+let whosPlaying = (gameState: gameState) =>
+  switch (gameState) {
+  | Playing(Cross) => Playing(Circle)
+  | _ => Playing(Cross)
+  };
+
+let getWinner = (flattenBoard, coords) =>
+  switch (
+    List.nth(flattenBoard, List.nth(coords, 0)),
+    List.nth(flattenBoard, List.nth(coords, 1)),
+    List.nth(flattenBoard, List.nth(coords, 2)),
+  ) {
+  | (Marked(Cross), Marked(Cross), Marked(Cross)) => Cross
+  | (Marked(Circle), Marked(Circle), Marked(Circle)) => Circle
+  | (_, _, _) => NoOne
+  };
 
 let checkGameState =
     (
@@ -40,24 +62,14 @@ let checkGameState =
         let head = List.hd(rest);
         let tail = List.tl(rest);
         switch (
+          getWinner(flattenBoard, head),
+          gameEnded(flattenBoard),
           tail,
-          List.nth(flattenBoard, List.nth(head, 0)),
-          List.nth(flattenBoard, List.nth(head, 1)),
-          List.nth(flattenBoard, List.nth(head, 2)),
         ) {
-        | (_, Marked(Cross), Marked(Cross), Marked(Cross)) =>
-          Winner(Cross)
-        | (_, Marked(Circle), Marked(Circle), Marked(Circle)) =>
-          Winner(Circle)
-        | ([], _, _, _) =>
-          isDraw(flattenBoard) ?
-            Draw :
-            (
-              switch (gameState) {
-              | Playing(Cross) => Playing(Circle)
-              | _ => Playing(Cross)
-              }
-            )
+        | (Cross, _, _) => Winner(Cross)
+        | (Circle, _, _) => Winner(Circle)
+        | (_, true, []) => Draw
+        | (_, false, []) => whosPlaying(gameState)
         | _ => check(tail)
         };
       };
