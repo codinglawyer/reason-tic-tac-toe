@@ -15,7 +15,7 @@ let component = ReasonReact.statelessComponent("Board");
 
 let make = (~state: state, ~onMark, ~onRestart, _children) => {
   ...component,
-  render: (_) =>
+  render: _ =>
     <div className="game-board">
       (
         state.board
@@ -29,14 +29,14 @@ let make = (~state: state, ~onMark, ~onRestart, _children) => {
              />
            )
         |> Array.of_list
-        |> ReasonReact.arrayToElement
+        |> ReasonReact.array
       )
       <div className="status">
         (state.gameState |> setStatus |> toString)
       </div>
       (
         switch (state.gameState) {
-        | Playing(_) => ReasonReact.nullElement
+        | Playing(_) => ReasonReact.null
         | _ =>
           <button className="restart" onClick=onRestart>
             (toString("Restart"))

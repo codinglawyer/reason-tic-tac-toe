@@ -4,7 +4,7 @@ let component = ReasonReact.statelessComponent("BoardRow");
 
 let make = (~gameState: gameState, ~row: row, ~onMark, ~index: int, _children) => {
   ...component,
-  render: (_) =>
+  render: _ =>
     <div className="board-row">
       (
         row
@@ -13,7 +13,7 @@ let make = (~gameState: gameState, ~row: row, ~onMark, ~index: int, _children) =
              <Square key=id value onMark=(() => onMark(id)) gameState />;
            })
         |> Array.of_list
-        |> ReasonReact.arrayToElement
+        |> ReasonReact.array
       )
     </div>,
 };

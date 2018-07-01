@@ -118,12 +118,12 @@ let make = _children => {
           checkGameState3x3(updatedBoard, state.board, state.gameState),
       });
     },
-  render: ({state, reduce}) =>
+  render: ({state, send}) =>
     <div className="game">
       <Board
         state
-        onRestart=(reduce(_evt => Restart))
-        onMark=(reduce(id => ClickSquare(id)))
+        onRestart=(_evt => send(Restart))
+        onMark=(id => send(ClickSquare(id)))
       />
     </div>,
 };
