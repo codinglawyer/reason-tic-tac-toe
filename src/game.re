@@ -84,10 +84,10 @@ let updateBoard = (board: board, gameState: gameState, id) =>
        row
        |> List.mapi((index: int, value: field) =>
             string_of_int(ind) ++ string_of_int(index) === id ?
-              switch (gameState, value) {
-              | (_, Marked(_)) => value
+              switch (gameState: gameState, value: field) {
+              | (Playing(_), Marked(_)) => value
               | (Playing(player), Empty) => Marked(player)
-              | (_, Empty) => Empty
+              | (_, _) => Empty
               } :
               value
           )
