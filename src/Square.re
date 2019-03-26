@@ -28,7 +28,7 @@ let make = (~value: field, ~gameState: gameState, ~onMark, _children) => {
   render: _self =>
     <button
       className=(getClass(gameState, value))
-      disabled=(gameState |> isFinished |> Js.Boolean.to_js_boolean)
+      disabled=(gameState |> isFinished)
       onClick=(_evt => onMark())>
       (value |> toValue |> toString)
     </button>,
